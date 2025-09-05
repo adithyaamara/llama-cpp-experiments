@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Llama.cpp Webcam Assistant</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 min-h-screen flex items-center justify-center p-6">
+  <div class="max-w-6xl w-full grid grid-cols-1 md:grid-cols-3 gap-6">
+
+    <!-- Webcam + Controls -->
+    <div class="bg-white shadow-lg rounded-2xl p-5 flex flex-col col-span-1">
+      <h2 class="text-xl font-bold mb-3 text-gray-700">🎥 Webcam Capture</h2>
+      <video id="video" autoplay playsinline class="rounded-lg shadow mb-4 w-full"></video>
+      <canvas id="canvas" width="320" height="240" class="hidden"></canvas>
+
+      <label for="interval" class="text-sm text-gray-600 mb-2">Snapshot Interval (ms)</label>
+      <input type="number" id="interval" value="5000" min="500" placeholder="Enter interval in milliseconds"
+        class="p-2 border rounded-lg mb-3 w-full focus:ring-2 focus:ring-indigo-400">
+
+      <div class="flex gap-3">
+        <button id="startBtn"
+          class="bg-indigo-500 hover:bg-indigo-600 text-white font-semibold py-2 px-4 rounded-lg flex-1">
+          ▶ Start
+        </button>
+        <button id="stopBtn"
+          class="bg-red-500 hover:bg-red-600 text-white font-semibold py-2 px-4 rounded-lg flex-1">
+          ⏹ Stop
+        </button>
+      </div>
+    </div>
+
+    <!-- Prompts -->
+    <div class="bg-white shadow-lg rounded-2xl p-5 flex flex-col col-span-1">
+      <h2 class="text-xl font-bold mb-3 text-gray-700">💬 Prompts</h2>
+
+      <label class="text-sm text-gray-600 mb-1">System Prompt</label>
+      <textarea id="systemPrompt" class="p-2 border rounded-lg w-full mb-3 focus:ring-2 focus:ring-indigo-400"
+        rows="4" placeholder="Enter system prompt here...">You are a vision assistant for visually impaired users. Clearly and accurately describe the content of images from a live webcam. Focus on objects, people, actions, and surroundings. Be concise, avoid assumptions, and highlight details useful for orientation and awareness.</textarea>
+
+      <label class="text-sm text-gray-600 mb-1">User Prompt</label>
+      <textarea id="userPrompt" class="p-2 border rounded-lg w-full mb-3 focus:ring-2 focus:ring-indigo-400"
+        rows="3" placeholder="Enter user prompt here...">Please describe what is happening in this image.</textarea>
+    </div>
+
+    <!-- Response + Metrics -->
+    <div class="bg-white shadow-lg rounded-2xl p-5 flex flex-col col-span-1">
+      <h2 class="text-xl font-bold mb-3 text-gray-700">📊 Results</h2>
+
+      <h3 class="text-lg font-semibold mb-1 text-gray-700">Response</h3>
+      <div id="response" class="bg-gray-50 border p-3 rounded-lg text-sm text-gray-800 h-40 overflow-y-auto whitespace-pre-wrap">
+        Waiting for output...
+      </div>
+
+      <h3 class="text-lg font-semibold mt-4 mb-1 text-gray-700">Metrics</h3>
+      <ul class="text-sm text-gray-700 space-y-1">
+        <li>🕒 Response Time: <span id="respTime">0</span> ms</li>
+        <li>❓ Total Questions: <span id="totalQs">0</span></li>
+        <li>⏱️ Time Spent: <span id="timeSpent">0s</span></li>
+      </ul>
+    </div>
+  </div>
+
+  <script>
+    const video = document.getElementById('video');
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    const intervalInput = document.getElementById('interval');
+    const responseDiv = document.getElementById('response');
+    const systemPrompt = document.getElementById('systemPrompt');
+    const userPrompt = document.getElementById('userPrompt');
+    const respTimeSpan = document.getElementById('respTime');
+    const totalQsSpan = document.getElementById('totalQs');
+    const timeSpentSpan = document.getElementById('timeSpent');
+
+    let captureInterval = null;
+    let totalQs = 0;
+    let startTime = null;
+
+    // Start webcam
+    async function startWebcam() {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+        video.srcObject = stream;
+      } catch (err) {
+        alert("Error accessing webcam: " + err);
+      }
+    }
+
+    // Capture frame + send to Llama.cpp / smolVLM
+    async function captureAndSend() {
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+      const imgData = canvas.toDataURL('image/png');
+
+      const payload = {
+        model: "smolvlm-instruct", // adjust to your model
+        messages: [
+          { role: "system", content: systemPrompt.value },
+          { role: "user", content: userPrompt.value },
+          { role: "user", content: [{ type: "image_url", image_url: { url: imgData } }] }
+        ],
+        max_tokens: 200
+      };
+
+      const t0 = performance.now();
+      try {
+        const res = await fetch("http://localhost:8080/v1/chat/completions", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+        });
+
+        const data = await res.json();
+        const t1 = performance.now();
+
+        const output = data.choices?.[0]?.message?.content || JSON.stringify(data, null, 2);
+        responseDiv.textContent = output;
+
+        // update metrics
+        respTimeSpan.textContent = Math.round(t1 - t0);
+        totalQs += 1;
+        totalQsSpan.textContent = totalQs;
+      } catch (err) {
+        responseDiv.textContent = "❌ Error: " + err;
+      }
+    }
+
+    // Timer for session
+    setInterval(() => {
+      if (startTime) {
+        const elapsed = Math.floor((Date.now() - startTime) / 1000);
+        timeSpentSpan.textContent = elapsed + "s";
+      }
+    }, 1000);
+
+    document.getElementById('startBtn').onclick = () => {
+      if (captureInterval) clearInterval(captureInterval);
+      startTime = Date.now();
+      captureAndSend();
+      captureInterval = setInterval(captureAndSend, parseInt(intervalInput.value));
+    };
+
+    document.getElementById('stopBtn').onclick = () => {
+      if (captureInterval) clearInterval(captureInterval);
+      captureInterval = null;
+    };
+
+    startWebcam();
+  </script>
+</body>
+</html>
