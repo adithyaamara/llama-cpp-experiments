@@ -1,10 +1,10 @@
 # llama.cpp-experiments
 
-A collection of single-page HTML experiments showcasing local AI inference with llama.cpp. All processing happens locally - no data ever leaves your browser!
+A collection of single-page HTML experiments showcasing local AI inference with llama.cpp. Experiment with various AI models locally - all processing happens on your machine!
 
 ## 🎯 Description
 
-This repository contains web-based experiments that demonstrate the power of running AI models locally using llama.cpp's server mode. Each experiment is a self-contained HTML file that connects to your local llama-server instance, ensuring complete privacy and offline functionality.
+This repository contains web-based experiments that demonstrate the power of running AI models locally using llama.cpp's server mode. Each experiment is a self-contained HTML file that connects to your local llama-server instance, ensuring complete privacy and offline functionality. From vision models to language models, explore the capabilities of local AI inference.
 
 ## 🚀 Live Demo
 
@@ -12,17 +12,19 @@ Visit the experiments at: https://[your-username].github.io/llama.cpp-experiment
 
 ## 📋 Current Experiments
 
-### 🖥️ SmolVLM2 Screen Capture Assistant
+### 🖥️ Screen Capture Assistant
+
 - **File**: `smolVLM2ScreenDemo.html`
 - **Features**: Real-time screen capture analysis, conversation history, text-to-speech
 - **Use Cases**: Accessibility, screen reading, automated monitoring
-- **Model**: SmolVLM2 (vision-language model)
+- **Model**: SmolVLM2 (vision-language model via llama.cpp)
 
 ### 🎥 Webcam Vision Assistant
+
 - **File**: `smolVLMLocalDemo.html`
 - **Features**: Live webcam feed analysis, real-time object detection
 - **Use Cases**: Scene understanding, object recognition, visual assistance
-- **Model**: SmolVLM-Instruct
+- **Model**: SmolVLM-Instruct (running locally via llama.cpp)
 
 ## 🛠️ Setup Instructions
 

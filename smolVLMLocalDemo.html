@@ -3,62 +3,227 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Llama.cpp Webcam Assistant</title>
+  <title>Webcam Vision Assistant - Local AI</title>
   <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    .tooltip {
+      position: relative;
+      display: inline-block;
+    }
+    .tooltip .tooltip-text {
+      visibility: hidden;
+      width: 220px;
+      background-color: #1f2937;
+      color: white;
+      text-align: center;
+      border-radius: 6px;
+      padding: 8px;
+      position: absolute;
+      z-index: 1000;
+      bottom: 125%;
+      left: 50%;
+      margin-left: -110px;
+      opacity: 0;
+      transition: opacity 0.3s;
+      font-size: 0.875rem;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    }
+    .tooltip .tooltip-text::after {
+      content: "";
+      position: absolute;
+      top: 100%;
+      left: 50%;
+      margin-left: -5px;
+      border-width: 5px;
+      border-style: solid;
+      border-color: #1f2937 transparent transparent transparent;
+    }
+    .tooltip:hover .tooltip-text {
+      visibility: visible;
+      opacity: 1;
+    }
+
+  </style>
 </head>
-<body class="bg-gray-100 min-h-screen flex items-center justify-center p-6">
-  <div class="max-w-6xl w-full grid grid-cols-1 md:grid-cols-3 gap-6">
+<body class="bg-gradient-to-br from-blue-50 to-indigo-100 min-h-screen">
+  <div class="container mx-auto px-6 py-12">
+    <!-- Header -->
+    <div class="text-center mb-12">
+      <div class="mb-4">
+        <a href="./index.html" class="inline-flex items-center text-green-600 hover:text-green-800 transition-colors duration-200">
+          <span class="mr-2">←</span> Back to Experiments
+        </a>
+      </div>
+      <h1 class="text-4xl font-bold text-gray-800 mb-4">🎥 Webcam Vision Assistant</h1>
+      <p class="text-xl text-gray-600 max-w-2xl mx-auto">
+        Real-time webcam analysis using local AI models powered by llama.cpp
+      </p>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8 max-w-6xl mx-auto">
 
     <!-- Webcam + Controls -->
-    <div class="bg-white shadow-lg rounded-2xl p-5 flex flex-col col-span-1">
-      <h2 class="text-xl font-bold mb-3 text-gray-700">🎥 Webcam Capture</h2>
-      <video id="video" autoplay playsinline class="rounded-lg shadow mb-4 w-full"></video>
-      <canvas id="canvas" width="320" height="240" class="hidden"></canvas>
+    <div class="bg-white rounded-3xl shadow-xl overflow-hidden hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2">
+      <div class="bg-gradient-to-r from-green-500 to-teal-600 h-24 flex items-center justify-center">
+        <div class="text-white text-4xl">🎥</div>
+      </div>
+      <div class="p-8">
+        <div class="tooltip">
+          <h2 class="text-2xl font-bold mb-4 text-gray-800">
+            Webcam Capture
+          </h2>
+          <span class="tooltip-text">Live webcam feed for real-time AI analysis</span>
+        </div>
 
-      <label for="interval" class="text-sm text-gray-600 mb-2">Snapshot Interval (ms)</label>
-      <input type="number" id="interval" value="5000" min="500" placeholder="Enter interval in milliseconds"
-        class="p-2 border rounded-lg mb-3 w-full focus:ring-2 focus:ring-indigo-400">
+        <div class="tooltip mb-6">
+          <!-- playsinline attribute is for iOS Safari compatibility - allows inline video playback -->
+          <!-- Note: Not supported in Firefox but doesn't break functionality -->
+          <video id="video" autoplay muted playsinline class="rounded-xl shadow-lg mb-4 w-full bg-gray-100 border border-gray-200"></video>
+          <span class="tooltip-text">Live video feed from your camera - ensure camera permissions are enabled</span>
+        </div>
 
-      <div class="flex gap-3">
-        <button id="startBtn"
-          class="bg-indigo-500 hover:bg-indigo-600 text-white font-semibold py-2 px-4 rounded-lg flex-1">
-          ▶ Start
-        </button>
-        <button id="stopBtn"
-          class="bg-red-500 hover:bg-red-600 text-white font-semibold py-2 px-4 rounded-lg flex-1">
-          ⏹ Stop
-        </button>
+        <canvas id="canvas" width="320" height="240" class="hidden"></canvas>
+
+        <div class="space-y-4">
+          <div class="tooltip">
+            <label for="interval" class="block text-sm font-medium text-gray-600 mb-2">Snapshot Interval (ms)</label>
+            <input type="number" id="interval" value="5000" min="500" placeholder="5000"
+              class="w-full p-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-400 focus:border-transparent transition-all duration-200">
+            <span class="tooltip-text">How often to capture and analyze frames (milliseconds). Lower values = more frequent analysis but higher resource usage</span>
+          </div>
+
+          <div class="flex gap-3">
+            <div class="tooltip flex-1">
+              <button id="startBtn"
+                class="w-full bg-gradient-to-r from-green-500 to-teal-600 hover:from-green-600 hover:to-teal-700 text-white font-semibold py-3 px-4 rounded-xl transition-all duration-200 transform hover:scale-105">
+                ▶ Start Analysis
+              </button>
+              <span class="tooltip-text">Begin capturing frames and sending them to the AI model for analysis</span>
+            </div>
+
+            <div class="tooltip flex-1">
+              <button id="stopBtn"
+                class="w-full bg-gradient-to-r from-red-500 to-rose-600 hover:from-red-600 hover:to-rose-700 text-white font-semibold py-3 px-4 rounded-xl transition-all duration-200 transform hover:scale-105">
+                ⏹ Stop Analysis
+              </button>
+              <span class="tooltip-text">Stop the automated analysis process</span>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
 
     <!-- Prompts -->
-    <div class="bg-white shadow-lg rounded-2xl p-5 flex flex-col col-span-1">
-      <h2 class="text-xl font-bold mb-3 text-gray-700">💬 Prompts</h2>
+    <div class="bg-white rounded-3xl shadow-xl overflow-visible hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2">
+      <div class="bg-gradient-to-r from-purple-500 to-pink-600 h-24 flex items-center justify-center">
+        <div class="text-white text-4xl">💬</div>
+      </div>
+      <div class="p-6">
+        <div class="tooltip">
+          <h2 class="text-2xl font-bold mb-4 text-gray-800">
+            AI Prompts
+          </h2>
+          <span class="tooltip-text">Configure how the AI analyzes your webcam feed</span>
+        </div>
 
-      <label class="text-sm text-gray-600 mb-1">System Prompt</label>
-      <textarea id="systemPrompt" class="p-2 border rounded-lg w-full mb-3 focus:ring-2 focus:ring-indigo-400"
-        rows="4" placeholder="Enter system prompt here...">You are a vision assistant for visually impaired users. Clearly and accurately describe the content of images from a live webcam. Focus on objects, people, actions, and surroundings. Be concise, avoid assumptions, and highlight details useful for orientation and awareness.</textarea>
+        <div class="space-y-4">
+          <div class="tooltip">
+            <label class="block text-sm font-medium text-gray-600 mb-2">System Prompt</label>
+            <textarea id="systemPrompt"
+              class="w-full min-w-0 max-w-none resize-x overflow-auto p-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-400 focus:border-transparent transition-all duration-200"
+              rows="8">You are a vision assistant for visually impaired users...</textarea>
+            <span class="tooltip-text">Instructions that define the AI's role and behavior.</span>
+          </div>
 
-      <label class="text-sm text-gray-600 mb-1">User Prompt</label>
-      <textarea id="userPrompt" class="p-2 border rounded-lg w-full mb-3 focus:ring-2 focus:ring-indigo-400"
-        rows="3" placeholder="Enter user prompt here...">Please describe what is happening in this image.</textarea>
+          <div class="tooltip">
+            <label class="block text-sm font-medium text-gray-600 mb-2">User Prompt</label>
+            <textarea id="userPrompt"
+              class="w-full min-w-0 max-w-none resize-x overflow-auto p-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-400 focus:border-transparent transition-all duration-200"
+              rows="4">Please describe what is happening in this image.</textarea>
+            <span class="tooltip-text">The specific question or request...</span>
+          </div>
+
+        </div>
+      </div>
     </div>
 
     <!-- Response + Metrics -->
-    <div class="bg-white shadow-lg rounded-2xl p-5 flex flex-col col-span-1">
-      <h2 class="text-xl font-bold mb-3 text-gray-700">📊 Results</h2>
-
-      <h3 class="text-lg font-semibold mb-1 text-gray-700">Response</h3>
-      <div id="response" class="bg-gray-50 border p-3 rounded-lg text-sm text-gray-800 h-40 overflow-y-auto whitespace-pre-wrap">
-        Waiting for output...
+    <div class="bg-white rounded-3xl shadow-xl overflow-hidden hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2">
+      <div class="bg-gradient-to-r from-indigo-500 to-blue-600 h-24 flex items-center justify-center">
+        <div class="text-white text-4xl">📊</div>
       </div>
+      <div class="p-8">
+        <div class="tooltip">
+          <h2 class="text-2xl font-bold mb-4 text-gray-800">
+            AI Response & Metrics
+          </h2>
+          <span class="tooltip-text">View AI analysis results and performance statistics</span>
+        </div>
 
-      <h3 class="text-lg font-semibold mt-4 mb-1 text-gray-700">Metrics</h3>
-      <ul class="text-sm text-gray-700 space-y-1">
-        <li>🕒 Response Time: <span id="respTime">0</span> ms</li>
-        <li>❓ Total Questions: <span id="totalQs">0</span></li>
-        <li>⏱️ Time Spent: <span id="timeSpent">0s</span></li>
-      </ul>
+        <div class="space-y-6">
+          <div class="tooltip">
+            <h3 class="text-lg font-semibold mb-2 text-gray-700">Response</h3>
+            <div id="response" class="bg-gray-50 border border-gray-200 p-4 rounded-xl text-sm text-gray-800 h-48 overflow-y-auto whitespace-pre-wrap">
+              Waiting for webcam analysis to begin...
+            </div>
+            <span class="tooltip-text">The AI's analysis and description of what it sees in your webcam feed</span>
+          </div>
+
+          <div class="tooltip">
+            <h3 class="text-lg font-semibold mb-2 text-gray-700">Performance Metrics</h3>
+            <div class="bg-gradient-to-br from-blue-50 to-indigo-50 p-4 rounded-xl border border-blue-200">
+              <ul class="text-sm text-gray-700 space-y-2">
+                <li class="flex justify-between items-center">
+                  <span class="flex items-center">
+                    🕒 Response Time:
+                  </span>
+                  <span id="respTime" class="font-semibold text-blue-600">0 ms</span>
+                </li>
+                <li class="flex justify-between items-center">
+                  <span class="flex items-center">
+                    ❓ Total Analyses:
+                  </span>
+                  <span id="totalQs" class="font-semibold text-green-600">0</span>
+                </li>
+                <li class="flex justify-between items-center">
+                  <span class="flex items-center">
+                    ⏱️ Session Time:
+                  </span>
+                  <span id="timeSpent" class="font-semibold text-purple-600">0s</span>
+                </li>
+              </ul>
+            </div>
+            <span class="tooltip-text">Real-time performance statistics including response time, analysis count, and session duration</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+  <!-- Setup Instructions -->
+  <div class="container mx-auto px-6 py-8">
+    <div class="bg-white rounded-3xl shadow-xl p-8 max-w-4xl mx-auto">
+      <h3 class="text-2xl font-bold text-gray-800 mb-6 text-center">🛠️ Setup Requirements</h3>
+      <div class="space-y-3 text-gray-700">
+        <div class="flex items-start gap-3">
+          <span class="text-green-500 font-bold">1.</span>
+          <span>Run a vision model locally with llama.cpp server: <code class="bg-gray-200 px-2 py-1 rounded">llama-server -hf ggml-org/SmolVLM2-500M-Video-Instruct-GGUF -n 100</code></span>
+        </div>
+        <div class="flex items-start gap-3">
+          <span class="text-green-500 font-bold">2.</span>
+          <span>Enable camera permissions in your browser</span>
+        </div>
+        <div class="flex items-start gap-3">
+          <span class="text-green-500 font-bold">3.</span>
+          <span>Make sure your browser supports WebRTC and getUserMedia APIs</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="text-center mt-12 text-gray-500">
+      <p>Built with ❤️ using llama.cpp, local AI models, Tailwind CSS, and modern web APIs</p>
     </div>
   </div>
 
